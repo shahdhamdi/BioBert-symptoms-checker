@@ -1,0 +1,12 @@
+services: 
+ -type: web
+  name: diagnosis-api
+  env: python
+  buildCommand: "pip install -r requirements.txt"
+  startCommand: "uvicorn main:app --host 0.0.0.0 --port 10000"
+  plan: free
+  envVars:
+  -key: OPENROUTER_API_KEY
+   value: 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
+  -key: BIOPORTAL_API_KEY
+  value: a4623e4b-47d1-4a1f-9e7e-794cd6ee223b
