@@ -6,3 +6,4 @@ transformers==4.40.1
 torch==2.3.0
 sqlalchemy==2.0.30
 pydantic==1.10.14
+gunicorn
