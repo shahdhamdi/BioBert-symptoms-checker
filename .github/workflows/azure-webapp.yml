@@ -1,7 +1,7 @@
 name: Deploy FastAPI app to Azure
 
 env:
-  AZURE_WEBAPP_NAME: fastapi-app-123  # ← اسم الـ App بتاعك في Azure
+  AZURE_WEBAPP_NAME: fastapi-app-123  
   PYTHON_VERSION: '3.12'
 
 on:
