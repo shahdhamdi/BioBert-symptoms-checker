@@ -103,7 +103,7 @@ def query_bioportal(query, api_key):
             return results[0].get("definition") or "No description available."
     return "No description available."
 
-def review_diagnosis_with_gpt(text, diagnosis, description):
+def review_diagnosis(text, diagnosis, description):
     prompt = (
         f"Symptoms: {text}\n"
         f"Initial diagnosis: {diagnosis}\n"
