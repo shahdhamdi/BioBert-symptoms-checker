@@ -89,7 +89,7 @@ disease_labels = [
 ]
 
 class PatientInput(BaseModel):
-    user_id: str
+    email: str
     text: str
 
 def query_bioportal(query, api_key):
@@ -146,12 +146,12 @@ def diagnose(input_data: PatientInput):
             top_prob, top_class = torch.max(probs, dim=1)
         diagnosis = disease_labels[top_class.item()]
         description = query_bioportal(diagnosis, BIOPORTAL_API_KEY)
-        diagnosis_final, description_final = review_diagnosis_with_gpt(input_data.text, diagnosis, description)
+        diagnosis_final, description_final = review_diagnosis(input_data.text, diagnosis, description)
         if description_final.lower() == "no description available.":
             description_final = query_bioportal(diagnosis_final, BIOPORTAL_API_KEY)
         db = SessionLocal()
         record = DiagnosisRecord(
-            user_id=input_data.user_id,
+            user_id=input_data.email,
             text=input_data.text,
             diagnosis=diagnosis_final,
             description=description_final
@@ -174,10 +174,10 @@ class DiagnosisOut(BaseModel):
         orm_mode = True
 
 @app.get("/history/", response_model=List[DiagnosisOut])
-def get_history(user_id: str):
+def get_history(email: str):
     try:
         db = SessionLocal()
-        records = db.query(DiagnosisRecord).filter(DiagnosisRecord.user_id == user_id).order_by(DiagnosisRecord.created_at.desc()).all()
+        records = db.query(DiagnosisRecord).filter(DiagnosisRecord.user_id == email).order_by(DiagnosisRecord.created_at.desc()).all()
         db.close()
         return records
     except Exception as e:
