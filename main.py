@@ -65,7 +65,7 @@ Base = declarative_base()
 class DiagnosisRecord(Base):
     __tablename__ = "diagnoses"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(String(100), index=True)
+    email = Column(String(100), index=True)
     text = Column(Text)
     diagnosis = Column(String(100))
     description = Column(Text)
@@ -142,16 +142,17 @@ def diagnose(input_data: PatientInput):
         inputs = tokenizer(input_data.text, return_tensors="pt")
         with torch.no_grad():
             outputs = model(**inputs)
-            probs = F.softmax(outputs.logits, dim=-1)
+            probs = torch.nn.functional.softmax(outputs.logits, dim=-1)
             top_prob, top_class = torch.max(probs, dim=1)
         diagnosis = disease_labels[top_class.item()]
         description = query_bioportal(diagnosis, BIOPORTAL_API_KEY)
         diagnosis_final, description_final = review_diagnosis(input_data.text, diagnosis, description)
         if description_final.lower() == "no description available.":
             description_final = query_bioportal(diagnosis_final, BIOPORTAL_API_KEY)
+
         db = SessionLocal()
         record = DiagnosisRecord(
-            user_id=input_data.email,
+            email=input_data.email,
             text=input_data.text,
             diagnosis=diagnosis_final,
             description=description_final
@@ -159,17 +160,23 @@ def diagnose(input_data: PatientInput):
         db.add(record)
         db.commit()
         db.close()
-        return {"diagnosis": diagnosis_final, "description": description_final}
+
+        return {
+            "summary": f"The diagnosis is {diagnosis_final}. {description_final}"
+        }
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 class DiagnosisOut(BaseModel):
     id: int
-    user_id: str
+    email: str
     text: str
     diagnosis: str
     description: str
     created_at: datetime
+
     class Config:
         orm_mode = True
 
@@ -177,7 +184,7 @@ class DiagnosisOut(BaseModel):
 def get_history(email: str):
     try:
         db = SessionLocal()
-        records = db.query(DiagnosisRecord).filter(DiagnosisRecord.user_id == email).order_by(DiagnosisRecord.created_at.desc()).all()
+        records = db.query(DiagnosisRecord).filter(DiagnosisRecord.email == email).order_by(DiagnosisRecord.created_at.desc()).all()
         db.close()
         return records
     except Exception as e:
